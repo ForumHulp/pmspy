@@ -1,0 +1,32 @@
+{
+	"name": "forumhulp/pmspy",
+	"type": "phpbb-extension",
+	"description": "Show PMs of your members, delete them if you want.",
+	"homepage": "http://forumhulp.com",
+	"version": "3.1.0",
+	"keywords": ["forumhulp", "phpbb", "extension", "add user", "pb"],
+	"license": "GPL-2.0",
+	"authors": [
+		{
+			"name": "John Peskens",
+			"homepage": "http://forumhulp.com",
+			"email": "info@forumhulp.com",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": ">=5.3.3",
+		"phpbb/phpbb": "3.1.*@dev"
+	},
+	"extra": {
+		"display-name": "PM Spy",
+		"soft-require": {
+           "phpbb/phpbb": "3.1.*@dev"
+        },
+		"version-check": {
+			"host": "forumhulp.com",
+			"directory": "/ext",
+			"filename": "index.php?id=74"
+		}
+	}
+}
