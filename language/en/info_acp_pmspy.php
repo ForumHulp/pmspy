@@ -31,7 +31,7 @@ $lang = array_merge($lang, array(
 	'TOTAL_USERS'			=> 'Total users',
 	'PM_COUNT'				=> 'PM count',
 
-	'PM_HOLDBOX'			=> 'Held',	
+	'PM_HOLDBOX'			=> 'Held',
 	'PM_INBOX'				=> 'Inbox',
 	'PM_NOBOX'				=> 'No box',
 	'PM_OUTBOX'				=> 'Outbox',
@@ -42,7 +42,7 @@ $lang = array_merge($lang, array(
 	'SORT_TO'				=> 'To',
 	'SORT_BCC'				=> 'BCC',
 	'SORT_PM_BOX'			=> 'PM box',
-	
+
 	'LOG_PM_SPY'			=> '<strong>PM’s deleted by PM Spy</strong><br />',
 
 	'FH_HELPER_NOTICE'		=> 'Forumhulp helper application does not exist!<br />Download <a href="https://github.com/ForumHulp/helper" target="_blank">forumhulp/helper</a> and copy the helper folder to your forumhulp extension folder.',
