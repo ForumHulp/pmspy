@@ -36,10 +36,10 @@ class pmspy_module
 		} else
 		{
 			// Start initial var setup
-			$start			= $this->request->variable('start', 0);
-			$sort_key		= $this->request->variable('sk', 'd');
-			$sd = $sort_dir	= $this->request->variable('sd', 'd');
-			$delete			= $this->request->is_set_post('delete');
+			$start		= $this->request->variable('start', 0);
+			$sk			= $this->request->variable('sk', 'd');
+			$sd			= $this->request->variable('sd', 'd');
+			$delete		= $this->request->is_set_post('delete');
 
 			if ($delete)
 			{
@@ -71,9 +71,9 @@ class pmspy_module
 				add_log('admin', 'LOG_PM_SPY');
 			}
 
-			$sort_dir = ($sort_dir == 'd') ? ' DESC' : ' ASC';
+			$sort_dir = ($sd == 'd') ? ' DESC' : ' ASC';
 
-			switch ($sort_key)
+			switch ($sk)
 			{
 				case 'b':
 					$order_by = 'u.username_clean' . $sort_dir;
@@ -109,7 +109,6 @@ class pmspy_module
 			// Get PM count for pagination
 			$sql = 'SELECT COUNT(msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE;
 			$result = $this->db->sql_query($sql);
-
 			$total_pm = (int) $this->db->sql_fetchfield('total_pm');
 			$this->db->sql_freeresult($result);
 
@@ -142,45 +141,28 @@ class pmspy_module
 			{
 				$this->template->assign_block_vars('pm_row', array(
 					'AUTHOR_IP'			=> $row['author_ip'],
-					'BCC'				=> ($row['bcc_address']) ? $this->get_pm_user_data($row['user_id'], $row['author_id']) : '',
+					'FROM'				=> $this->get_pm_user_data($row['author_id']),
+					'TO'				=> ($row['to_address'] && ($row['folder_id'] < PRIVMSGS_OUTBOX || !$row['folder_id'])) ? $this->get_pm_user_data($row['user_id']) : '',
+					'BCC'				=> ($row['bcc_address'] && ($row['folder_id'] < PRIVMSGS_OUTBOX || !$row['folder_id'])) ? $this->get_pm_user_data($row['user_id']) : '',
 					'DATE'				=> $this->user->format_date($row['message_time']),
 					'FOLDER'			=> ($row['folder_id'] > PRIVMSGS_INBOX) ? $this->user->lang['PM_SAVED'] : $pm_box_ary[$row['folder_id']],
-					'FROM'				=> $this->get_pm_user_data($row['author_id']),
 					'IS_GROUP'			=> (strstr($row['to_address'], 'g')) ? $this->get_pm_group($row['to_address']) : '',
-
-					'LAST_VISIT_FROM'	=> $this->get_last_visit($row['author_id']),
-					'LAST_VISIT_TO'		=> ($row['to_address']) ? $this->get_last_visit($row['user_id'], $row['author_id']) : '',
-
-					// We have to replace " in this variable because the template system will not parse it.
 					'PM_ID'				=> str_replace('"', '#', serialize(array('msg_ids' => $row['msg_id'], 'user_id' => $row['user_id'], 'folder_id' => $row['folder_id']))),
-
-					// Create a unique key for the js script
 					'PM_KEY'			=> $row['msg_id'] . $row['user_id'],
 					'PM_SUBJECT'		=> $row['message_subject'],
 					'PM_TEXT'			=> generate_text_for_display($row['message_text'], $row['bbcode_uid'], $row['bbcode_bitfield'], $flags),
-					'TO'				=> ($row['to_address']) ? $this->get_pm_user_data($row['user_id'], $row['author_id']) : '',
 				));
 			}
 			$this->db->sql_freeresult($result);
 
-			$sort_by_text = array('f' => $this->user->lang['SORT_FROM'],
-									't' => $this->user->lang['SORT_TO'],
-									'b' => $this->user->lang['SORT_BCC'],
-									'p' => $this->user->lang['SORT_PM_BOX'],
-									'i' => $this->user->lang['SORT_IP'],
-									'd' => $this->user->lang['SORT_DATE']);
-			$limit_days = array();
-			$s_sort_key = $s_limit_days = $s_sort_dir = $u_sort_param = '';
-			gen_sort_selects($limit_days, $sort_by_text, $sort_days, $sort_key, $sd, $s_limit_days, $s_sort_key, $s_sort_dir, $u_sort_param);
-
-			$base_url = $this->u_action . '&amp;sk=' . $sort_key . '&amp;sd=' . $sd;
+			$base_url = $this->u_action . '&amp;sk=' . $sk . '&amp;sd=' . $sd;
 			$start = $this->pagination->validate_start($start, 1, $total_pm);
 			$this->pagination->generate_template_pagination($base_url, 'pagination', 'start', $total_pm, $config['topics_per_page'], $start);
 
 			$this->template->assign_vars(array(
 				'MESSAGE_COUNT'		=> $total_pm,
-				'S_SORT_KEY'		=> $s_sort_key,
-				'S_SORT_DIR'		=> $s_sort_dir,
+				'U_NAME'			=> $sk,
+				'U_SORT'			=> $sd,
 				'U_ACTION'			=> $this->u_action,
 			));
 		}
@@ -188,7 +170,6 @@ class pmspy_module
 
 	function get_pm_group($group)
 	{
-		//$group = (int) $group;
 		$group = str_replace('g_', '', $group);
 		$group = explode(':', $group);
 		$sql = 'SELECT group_name FROM ' . GROUPS_TABLE . ' WHERE group_id IN (' . implode(',', $group) . ')';
@@ -201,61 +182,17 @@ class pmspy_module
 		return implode(', ', $groupname);
 	}
 
-	function get_last_visit($user_id, $author = 0)
+	function get_pm_user_data($pm_user)
 	{
-		if ($user_id == $author)
-		{
-			$last_visit = '';
-		}
-		else
-		{
-			$sql = 'SELECT session_user_id, MAX(session_time) AS session_time
-				FROM ' . SESSIONS_TABLE . '
-				WHERE session_time >= ' . (time() - $this->config['session_length']) . '
-					AND ' . $this->db->sql_in_set('session_user_id', $user_id) . '
-				GROUP BY session_user_id';
-			$result = $this->db->sql_query($sql);
+		$sql = 'SELECT username, user_colour, user_lastvisit, MAX(session_time) AS session_time FROM ' . USERS_TABLE . ' u
+				LEFT JOIN ' . SESSIONS_TABLE . ' s ON s.session_user_id = u.user_id
+				WHERE user_id = ' . $pm_user;
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
 
-			$session_times = array();
-			while ($row = $this->db->sql_fetchrow($result))
-			{
-				$session_times[$row['session_user_id']] = $row['session_time'];
-			}
-			$this->db->sql_freeresult($result);
-
-			$sql = 'SELECT user_lastvisit
-				FROM ' . USERS_TABLE . '
-				WHERE ' . $this->db->sql_in_set('user_id', $user_id);
-			$result = $this->db->sql_query($sql);
-
-			while ($row = $this->db->sql_fetchrow($result))
-			{
-				$session_time = (!empty($session_times[$user_id])) ? $session_times[$user_id] : 0;
-				$last_visit = (!empty($session_time)) ? $session_time : $row['user_lastvisit'];
-				$last_visit = ($last_visit) ? $this->user->format_date($last_visit) : '';
-			}
-			$this->db->sql_freeresult($result);
-		}
-
-		return $last_visit;
-	}
-
-	function get_pm_user_data($pm_user, $author = 0)
-	{
-		if ($pm_user == $author)
-		{
-			$user_info = '';
-		}
-		else
-		{
-			$sql = 'SELECT username, user_colour
-				FROM ' . USERS_TABLE . '
-				WHERE ' . $this->db->sql_in_set('user_id', $pm_user);
-			$result = $this->db->sql_query($sql);
-			$row = $this->db->sql_fetchrow($result);
-
-			$user_info = get_username_string('full',(int) $pm_user, $row['username'], $row['user_colour']);
-		}
+		$user_info = get_username_string('full',(int) $pm_user, $row['username'], $row['user_colour']);
+		$last_visit = $this->user->format_date(max($row['user_lastvisit'], $row['session_time']));
+		$user_info = str_replace('<a href', '<a' . ((max($row['user_lastvisit'], $row['session_time'])) ? ' title="' . $this->user->lang['LAST_ONLINE'] . ' ' . $last_visit . '"' : '')  . ' href', $user_info);
 		return $user_info;
 	}
 }

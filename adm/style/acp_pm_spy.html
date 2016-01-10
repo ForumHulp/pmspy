@@ -12,9 +12,9 @@
 <h1>{L_PM_SPY_READ} <a href="{U_ACTION}&amp;action=details" class="simpledialog"><i class="fa fa-info-circle"></i></a></h1>
 <p>{L_PM_SPY_READ_EXPLAIN}</p>
 
-<form id="pm_spy" method="post" action="{U_ACTION}&amp;action=delete">
+<form id="pm_spy" method="post" action="{U_ACTION}&amp;action=delete&amp;sk={U_NAME}&amp;sd={U_SORT}">
 <div style="float:left;width:50%;">
-	[ {L_PM_COUNT}: {MESSAGE_COUNT} ] 
+	{L_PM_COUNT}: {MESSAGE_COUNT}
 </div>
 <!-- IF .pagination or TOTAL_POSTS -->
 	<div class="pagination">
@@ -31,23 +31,29 @@
 	<tr>
 		<th>{L_MARK}</th>
 		<th>{L_SUBJECT}</th>
-		<th>{L_FROM}</th>
-		<th>{L_TO}</th>
-		<th>{L_BCC}</th>
+		<th>{L_FROM} <a href="{U_ACTION}&amp;sk=f&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'f' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=f&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'f' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
+        </th>
+		<th>{L_TO} <a href="{U_ACTION}&amp;sk=t&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 't' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=t&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 't' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
+        </th>
+		<th>{L_BCC} <a href="{U_ACTION}&amp;sk=b&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'b' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=b&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'b' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
+        </th>
 		<th>{L_GROUP}</th>
-		<th>{L_PM_BOX}</th>
-		<th>{L_AUTHOR_IP}</th>
-		<th>{L_DATE}</th>
+		<th>{L_PM_BOX} <a href="{U_ACTION}&amp;sk=p&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'p' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=p&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'p' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
+        </th>
+		<th>{L_AUTHOR_IP} <a href="{U_ACTION}&amp;sk=i&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'i' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=i&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'i' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
+        </th>
+		<th>{L_DATE} <a href="{U_ACTION}&amp;sk=d&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'd' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=d&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'd' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
+        </th>
 	</tr>
 </thead>
 
 <tbody>
 	<!-- BEGIN pm_row -->
-	<!-- IF pm_row.S_ROW_COUNT is even --><tr class="row1"><!-- ELSE --><tr class="row2"><!-- ENDIF -->
+	<tr class="<!-- IF pm_row.S_ROW_COUNT is even -->row1<!-- ELSE -->row2<!-- ENDIF -->">
 		<td style="text-align: center;"><input type="checkbox" class="radio" name="mark[]" value="{pm_row.PM_ID}" /></td>
-		<td class="cursor" onclick="ShowHide('pm{pm_row.PM_KEY}')">{pm_row.PM_SUBJECT}</td>
-		<td>{pm_row.FROM}<br />{pm_row.LAST_VISIT_FROM}</td>
-		<td>{pm_row.TO}<br />{pm_row.LAST_VISIT_TO}</td>
+		<td class="cursor" onclick="ShowHide('pm{pm_row.PM_KEY}')" title="{L_READ_MESSAGE}">{pm_row.PM_SUBJECT}</td>
+		<td>{pm_row.FROM}</td>
+		<td>{pm_row.TO}</td>
 		<td>{pm_row.BCC}</td>
 		<td>{pm_row.IS_GROUP}</td>
 		<td>{pm_row.FOLDER}</td>
@@ -61,6 +67,8 @@
 	<!-- END pm_row -->
 </tbody>
 </table>
+<p class="small" style="float:left;margin-top:5px;"><input class="button2" type="submit" value="{L_DELETE_PMS}" name="delete" /><br />
+<a href="#" onclick="marklist('pm_spy', 'mark', true); return false;">{L_MARK_ALL}</a> &bull; <a href="#" onclick="marklist('pm_spy', 'mark', false); return false;">{L_UNMARK_ALL}</a></p>
 <!-- IF .pagination or TOTAL_POSTS -->
 	<div class="pagination">
 		<!-- IF .pagination -->
@@ -71,12 +79,6 @@
 	</div>
 <!-- ENDIF -->
 
-<fieldset class="display-options" style="margin-top:5px;">
-    <p class="small" style="float:left;"><input class="button2" type="submit" value="{L_DELETE_PMS}" name="delete" /><br />
-    <a href="#" onclick="marklist('pm_spy', 'mark', true); return false;">{L_MARK_ALL}</a> &bull; <a href="#" onclick="marklist('pm_spy', 'mark', false); return false;">{L_UNMARK_ALL}</a></p>
-	<strong>{L_SORT_BY} :</strong> {S_SORT_KEY} {S_SORT_DIR}
-	<input class="button2" type="submit" value="{L_GO}" name="sort" />
-</fieldset>
 </form>
 <!-- INCLUDEJS {ROOT_PATH}ext/forumhulp/helper/js/jquery.simpledialog.js -->
 <!-- INCLUDEJS js/pmspy.js -->

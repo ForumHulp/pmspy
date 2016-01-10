@@ -1,3 +1,6 @@
+.fa-arrow-up, .fa-arrow-down {float:right; color:#fff; padding: 0 2px;}
+#act-arrow {color:#CECECE;}
+
 /* Content container styles
 ----------------------------------------*/
 .content {
