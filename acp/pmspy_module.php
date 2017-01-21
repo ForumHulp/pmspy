@@ -9,22 +9,41 @@
 
 namespace forumhulp\pmspy\acp;
 
+use phpbb\config\config;
+use phpbb\db\driver\driver_interface;
+use phpbb\user;
+use phpbb\request\request_interface;
+use phpbb\template\template;
+use phpbb\pagination;
+
 class pmspy_module
 {
 	public $u_action;
+
+	private $config;
+	private $db;
+	private $user;
+	private $request;
+	private $template;
+
+	private function setup(config $config, driver_interface $db, user $user, request_interface $request, template $template, pagination $pagination, $phpbb_root_path, $phpEx)
+	{
+		$this->config 			= $config;
+		$this->db 				= $db;
+		$this->user 			= $user;
+		$this->request 			= $request;
+		$this->template 		= $template;
+		$this->pagination		= $pagination;
+		$this->phpbb_root_path	= $phpbb_root_path;
+		$this->php_ext			= $phpEx;
+	}
 
 	function main($id, $mode)
 	{
 		global $config, $db, $user, $request, $template, $phpbb_container, $phpbb_root_path, $phpEx;
 
-		$this->config			= $config;
-		$this->db				= $db;
-		$this->user				= $user;
-		$this->request			= $request;
-		$this->template			= $template;
-		$this->pagination		= $phpbb_container->get('pagination');
-		$this->phpbb_root_path	= $phpbb_root_path;
-		$this->php_ext			= $phpEx;
+		$this->setup($config, $db, $user, $request, $template, $phpbb_container->get('pagination'), $phpbb_root_path, $phpEx);
+
 		$this->tpl_name			= 'acp_pm_spy';
 		$this->page_title		= 'ACP_PM_SPY';
 
@@ -124,7 +143,7 @@ class pmspy_module
 				PRIVMSGS_SENTBOX	=> $this->user->lang['PM_SENTBOX'],
 				PRIVMSGS_INBOX		=> $this->user->lang['PM_INBOX'],
 			);
-
+ 
 			$flags = (($this->config['auth_bbcode_pm']) ? OPTION_FLAG_BBCODE : 0) +
 					(($this->config['auth_smilies_pm']) ? OPTION_FLAG_SMILIES : 0) +
 					(($this->config['allow_post_links']) ? OPTION_FLAG_LINKS : 0);
@@ -140,17 +159,17 @@ class pmspy_module
 			while ($row = $this->db->sql_fetchrow($result))
 			{
 				$this->template->assign_block_vars('pm_row', array(
-					'AUTHOR_IP'			=> $row['author_ip'],
-					'FROM'				=> $this->get_pm_user_data($row['author_id']),
-					'TO'				=> ($row['to_address'] && ($row['folder_id'] < PRIVMSGS_OUTBOX || !$row['folder_id'])) ? $this->get_pm_user_data($row['user_id']) : '',
-					'BCC'				=> ($row['bcc_address'] && ($row['folder_id'] < PRIVMSGS_OUTBOX || !$row['folder_id'])) ? $this->get_pm_user_data($row['user_id']) : '',
-					'DATE'				=> $this->user->format_date($row['message_time']),
-					'FOLDER'			=> ($row['folder_id'] > PRIVMSGS_INBOX) ? $this->user->lang['PM_SAVED'] : $pm_box_ary[$row['folder_id']],
-					'IS_GROUP'			=> (strstr($row['to_address'], 'g')) ? $this->get_pm_group($row['to_address']) : '',
-					'PM_ID'				=> str_replace('"', '#', serialize(array('msg_ids' => $row['msg_id'], 'user_id' => $row['user_id'], 'folder_id' => $row['folder_id']))),
-					'PM_KEY'			=> $row['msg_id'] . $row['user_id'],
-					'PM_SUBJECT'		=> $row['message_subject'],
-					'PM_TEXT'			=> generate_text_for_display($row['message_text'], $row['bbcode_uid'], $row['bbcode_bitfield'], $flags),
+					'AUTHOR_IP'		=> $row['author_ip'],
+					'FROM'			=> $this->get_pm_user_data($row['author_id']),
+					'TO'			=> ($row['to_address'] && ($row['folder_id'] < PRIVMSGS_OUTBOX || !$row['folder_id'])) ? $this->get_pm_user_data($row['user_id']) : '',
+					'BCC'			=> ($row['bcc_address'] && ($row['folder_id'] < PRIVMSGS_OUTBOX || !$row['folder_id'])) ? $this->get_pm_user_data($row['user_id']) : '',
+					'DATE'			=> $this->user->format_date($row['message_time']),
+					'FOLDER'		=> ($row['folder_id'] > PRIVMSGS_INBOX) ? $this->user->lang['PM_SAVED'] : $pm_box_ary[$row['folder_id']],
+					'IS_GROUP'		=> (strstr($row['to_address'], 'g')) ? $this->get_pm_group($row['to_address']) : '',
+					'PM_ID'			=> str_replace('"', '#', serialize(array('msg_ids' => $row['msg_id'], 'user_id' => $row['user_id'], 'folder_id' => $row['folder_id']))),
+					'PM_KEY'		=> $row['msg_id'] . $row['user_id'],
+					'PM_SUBJECT'	=> $row['message_subject'],
+					'PM_TEXT'		=> generate_text_for_display($row['message_text'], $row['bbcode_uid'], $row['bbcode_bitfield'], $flags),
 				));
 			}
 			$this->db->sql_freeresult($result);
@@ -168,7 +187,7 @@ class pmspy_module
 		}
 	}
 
-	function get_pm_group($group)
+	private function get_pm_group($group)
 	{
 		$group = str_replace('g_', '', $group);
 		$group = explode(':', $group);
@@ -177,12 +196,13 @@ class pmspy_module
 		$groupname = array();
 		while ($row = $this->db->sql_fetchrow($result))
 		{
-			$groupname[] = (isset($this->user->lang['G_' . utf8_strtoupper($row['group_name'])])) ? $this->user->lang['G_' . utf8_strtoupper($row['group_name'])] : $row['group_name'];
+			$groupname[] = (isset($this->user->lang['G_' . utf8_strtoupper($row['group_name'])])) ? $this->user->lang['G_' . utf8_strtoupper($row['group_name'])] : 
+							$row['group_name'];
 		}
 		return implode(', ', $groupname);
 	}
 
-	function get_pm_user_data($pm_user)
+	private function get_pm_user_data($pm_user)
 	{
 		$sql = 'SELECT username, user_colour, user_lastvisit, MAX(session_time) AS session_time FROM ' . USERS_TABLE . ' u
 				LEFT JOIN ' . SESSIONS_TABLE . ' s ON s.session_user_id = u.user_id

@@ -29,7 +29,6 @@
 <table cellspacing="1">
 <thead>
 	<tr>
-		<th>{L_MARK}</th>
 		<th>{L_SUBJECT}</th>
 		<th>{L_FROM} <a href="{U_ACTION}&amp;sk=f&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'f' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=f&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'f' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
         </th>
@@ -44,13 +43,13 @@
         </th>
 		<th>{L_DATE} <a href="{U_ACTION}&amp;sk=d&amp;sd=d" title="{L_DESCENDING}"><i class="fa fa-arrow-up"<!-- IF U_NAME == 'd' and U_SORT == 'a' --> id="act-arrow"<!-- ENDIF -->></i></a><a href="{U_ACTION}&amp;sk=d&amp;sd=a" title="{L_ASCENDING}"><i class="fa fa-arrow-down"<!-- IF U_NAME == 'd' and U_SORT == 'd' --> id="act-arrow"<!-- ENDIF -->></i></a>
         </th>
+		<th>{L_MARK}</th>
 	</tr>
 </thead>
 
 <tbody>
 	<!-- BEGIN pm_row -->
 	<tr class="<!-- IF pm_row.S_ROW_COUNT is even -->row1<!-- ELSE -->row2<!-- ENDIF -->">
-		<td style="text-align: center;"><input type="checkbox" class="radio" name="mark[]" value="{pm_row.PM_ID}" /></td>
 		<td class="cursor" onclick="ShowHide('pm{pm_row.PM_KEY}')" title="{L_READ_MESSAGE}">{pm_row.PM_SUBJECT}</td>
 		<td>{pm_row.FROM}</td>
 		<td>{pm_row.TO}</td>
@@ -59,6 +58,7 @@
 		<td>{pm_row.FOLDER}</td>
 		<td>{pm_row.AUTHOR_IP}</td>
 		<td>{pm_row.DATE}</td>
+		<td style="text-align: center;"><input type="checkbox" class="radio" name="mark[]" value="{pm_row.PM_ID}" /></td>
 	</tr>
     <tr class="<!-- IF pm_row.S_ROW_COUNT is even -->row1<!-- ELSE -->row2<!-- ENDIF -->" style="display:none" id="pm{pm_row.PM_KEY}">
 		<td>&nbsp;</td>
@@ -67,7 +67,7 @@
 	<!-- END pm_row -->
 </tbody>
 </table>
-<p class="small" style="float:left;margin-top:5px;"><input class="button2" type="submit" value="{L_DELETE_PMS}" name="delete" /><br />
+<p class="small" style="float:right;margin-top:5px;"><input class="button2" type="submit" value="{L_DELETE_PMS}" name="delete" /> 
 <a href="#" onclick="marklist('pm_spy', 'mark', true); return false;">{L_MARK_ALL}</a> &bull; <a href="#" onclick="marklist('pm_spy', 'mark', false); return false;">{L_UNMARK_ALL}</a></p>
 <!-- IF .pagination or TOTAL_POSTS -->
 	<div class="pagination">

@@ -48,7 +48,7 @@ $lang = array_merge($lang, array(
 	'LOG_PM_SPY'			=> '<strong>PM’s deleted by PM Spy</strong><br />',
 
 	'FH_HELPER_NOTICE'		=> 'Forumhulp helper application does not exist!<br />Download <a href="https://github.com/ForumHulp/helper" target="_blank">forumhulp/helper</a> and copy the helper folder to your forumhulp extension folder.',
-	'PMSPY_NOTICE'	=> '<div class="phpinfo"><p class="entry">This extension resides in %1$s » %2$s » %3$s.</p></div>',
+	'PMSPY_NOTICE'			=> '<div class="phpinfo"><p class="entry">This extension resides in %1$s » %2$s » %3$s.</p></div>',
 ));
 
 // Description of extension

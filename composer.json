@@ -3,7 +3,7 @@
 	"type": "phpbb-extension",
 	"description": "Show PMs of your members, delete them if you want.",
 	"homepage": "http://forumhulp.com",
-	"version": "3.1.0",
+	"version": "3.1.1",
 	"keywords": ["forumhulp", "phpbb", "extension", "add user", "pb"],
 	"license": "GPL-2.0",
 	"authors": [
