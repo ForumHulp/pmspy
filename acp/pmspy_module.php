@@ -143,7 +143,7 @@ class pmspy_module
 				PRIVMSGS_SENTBOX	=> $this->user->lang['PM_SENTBOX'],
 				PRIVMSGS_INBOX		=> $this->user->lang['PM_INBOX'],
 			);
- 
+
 			$flags = (($this->config['auth_bbcode_pm']) ? OPTION_FLAG_BBCODE : 0) +
 					(($this->config['auth_smilies_pm']) ? OPTION_FLAG_SMILIES : 0) +
 					(($this->config['allow_post_links']) ? OPTION_FLAG_LINKS : 0);
@@ -196,8 +196,7 @@ class pmspy_module
 		$groupname = array();
 		while ($row = $this->db->sql_fetchrow($result))
 		{
-			$groupname[] = (isset($this->user->lang['G_' . utf8_strtoupper($row['group_name'])])) ? $this->user->lang['G_' . utf8_strtoupper($row['group_name'])] : 
-							$row['group_name'];
+			$groupname[] = (isset($this->user->lang['G_' . utf8_strtoupper($row['group_name'])])) ? $this->user->lang['G_' . utf8_strtoupper($row['group_name'])] : $row['group_name'];
 		}
 		return implode(', ', $groupname);
 	}
