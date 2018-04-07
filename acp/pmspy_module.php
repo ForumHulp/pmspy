@@ -158,7 +158,7 @@ class pmspy_module
 			$sql = 'SELECT p.msg_id, p.message_subject, p.message_text, p.bbcode_uid, p.bbcode_bitfield, p.message_time, p.bcc_address, p.to_address, p.author_ip, t.user_id,
 					t.author_id, t.folder_id, LOWER(u.username) AS to_username
 					FROM ' . PRIVMSGS_TABLE . ' p, ' . PRIVMSGS_TO_TABLE . ' t, ' . USERS_TABLE . ' u
-					WHERE p.msg_id = t.msg_id ' . $sql_keywords . 
+					WHERE p.msg_id = t.msg_id ' . $sql_keywords . ' ' .
 						$order_sql . '
 					ORDER BY ' . $order_by;
 			$result = $this->db->sql_query_limit($sql, $this->config['topics_per_page'], $start);
@@ -184,14 +184,14 @@ class pmspy_module
 			$args = $request->escape(explode('amp;', $this->u_action), true);
 			$find = array('"', "'", '<', '>', '&quot;', '&lt;', '&gt;');
 			$replace = array('%22', '%27', '%3C', '%3E', '%22', '%3C', '%3E');
-	
+
 			foreach ($args as $key => $argument)
 			{
 				if (strpos($argument, 'sid=') === 0)
 				{
 					continue;
 				}
-	
+
 				$use_args[] = str_replace($find, $replace, $argument);
 			}
 			unset($args);
