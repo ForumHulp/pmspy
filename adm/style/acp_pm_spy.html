@@ -13,9 +13,7 @@
 <p>{L_PM_SPY_READ_EXPLAIN}</p>
 
 <form id="pm_spy" method="post" action="{U_ACTION}&amp;action=delete&amp;sk={U_NAME}&amp;sd={U_SORT}">
-<div style="float:left;width:50%;">
-	{L_PM_COUNT}: {MESSAGE_COUNT}
-</div>
+<p class="small left">{L_SEARCH_KEYWORDS}{L_COLON} <input type="text" name="keywords" value="{S_KEYWORDS}" />&nbsp;<input type="submit" class="button2" name="filter" value="{L_SEARCH}" /></p>
 <!-- IF .pagination or TOTAL_POSTS -->
 	<div class="pagination">
 		<!-- IF .pagination -->
@@ -58,7 +56,7 @@
 		<td>{pm_row.FOLDER}</td>
 		<td>{pm_row.AUTHOR_IP}</td>
 		<td>{pm_row.DATE}</td>
-		<td style="text-align: center;"><input type="checkbox" class="radio" name="mark[]" value="{pm_row.PM_ID}" /></td>
+		<td><input type="checkbox" class="radio" name="mark[]" value="{pm_row.PM_ID}" /></td>
 	</tr>
     <tr class="<!-- IF pm_row.S_ROW_COUNT is even -->row1<!-- ELSE -->row2<!-- ENDIF -->" style="display:none" id="pm{pm_row.PM_KEY}">
 		<td>&nbsp;</td>
@@ -67,18 +65,9 @@
 	<!-- END pm_row -->
 </tbody>
 </table>
-<p class="small" style="float:right;margin-top:5px;"><input class="button2" type="submit" value="{L_DELETE_PMS}" name="delete" /> 
+<p class="small"><input class="button2" type="submit" value="{L_DELETE_PMS}" name="delete" /> 
 <a href="#" onclick="marklist('pm_spy', 'mark', true); return false;">{L_MARK_ALL}</a> &bull; <a href="#" onclick="marklist('pm_spy', 'mark', false); return false;">{L_UNMARK_ALL}</a></p>
-<!-- IF .pagination or TOTAL_POSTS -->
-	<div class="pagination">
-		<!-- IF .pagination -->
-			<!-- INCLUDE pagination.html -->
-		<!-- ELSE -->
-			&bull; {PAGE_NUMBER}
-		<!-- ENDIF -->
-	</div>
-<!-- ENDIF -->
-
+<p class="small left">{L_PM_COUNT}: {MESSAGE_COUNT}</p>
 </form>
 <!-- INCLUDEJS {ROOT_PATH}ext/forumhulp/helper/js/jquery.simpledialog.js -->
 <!-- INCLUDEJS js/pmspy.js -->

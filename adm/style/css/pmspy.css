@@ -21,6 +21,12 @@
 	margin-left: 3em;
 }
 
+#pm_spy p {float:right;margin-top:5px;}
+#pm_spy p.left {float:left;}
+#pm_spy table tr > td:last-of-type {
+	text-align: center;
+}
+
 /* BB Code styles
 ----------------------------------------*/
 /* Quote block */

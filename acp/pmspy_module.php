@@ -55,10 +55,13 @@ class pmspy_module
 		} else
 		{
 			// Start initial var setup
-			$start		= $this->request->variable('start', 0);
-			$sk			= $this->request->variable('sk', 'd');
-			$sd			= $this->request->variable('sd', 'd');
-			$delete		= $this->request->is_set_post('delete');
+			$start			= $this->request->variable('start', 0);
+			$sk				= $this->request->variable('sk', 'd');
+			$sd				= $this->request->variable('sd', 'd');
+			$delete			= $this->request->is_set_post('delete');
+			$filter			= $this->request->is_set_post('filter');
+			$keywords		= $this->request->variable('keywords', '', true);
+			$sql_keywords	= $keywords_param = '';
 
 			if ($delete)
 			{
@@ -88,6 +91,10 @@ class pmspy_module
 				}
 
 				add_log('admin', 'LOG_PM_SPY');
+			} else if ($filter || $keywords)
+			{
+				$keywords_param = !empty($keywords) ? '&amp;keywords=' . urlencode(htmlspecialchars_decode($keywords)) : '';
+				$sql_keywords = $this->generate_sql_keyword($keywords);
 			}
 
 			$sort_dir = ($sd == 'd') ? ' DESC' : ' ASC';
@@ -126,7 +133,7 @@ class pmspy_module
 			}
 
 			// Get PM count for pagination
-			$sql = 'SELECT COUNT(msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE;
+			$sql = 'SELECT COUNT(t.msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE. ' t, ' . PRIVMSGS_TABLE . ' p WHERE p.msg_id = t.msg_id ' . $sql_keywords;
 			$result = $this->db->sql_query($sql);
 			$total_pm = (int) $this->db->sql_fetchfield('total_pm');
 			$this->db->sql_freeresult($result);
@@ -151,7 +158,7 @@ class pmspy_module
 			$sql = 'SELECT p.msg_id, p.message_subject, p.message_text, p.bbcode_uid, p.bbcode_bitfield, p.message_time, p.bcc_address, p.to_address, p.author_ip, t.user_id,
 					t.author_id, t.folder_id, LOWER(u.username) AS to_username
 					FROM ' . PRIVMSGS_TABLE . ' p, ' . PRIVMSGS_TO_TABLE . ' t, ' . USERS_TABLE . ' u
-					WHERE p.msg_id = t.msg_id ' .
+					WHERE p.msg_id = t.msg_id ' . $sql_keywords . 
 						$order_sql . '
 					ORDER BY ' . $order_by;
 			$result = $this->db->sql_query_limit($sql, $this->config['topics_per_page'], $start);
@@ -174,7 +181,22 @@ class pmspy_module
 			}
 			$this->db->sql_freeresult($result);
 
-			$base_url = $this->u_action . '&amp;sk=' . $sk . '&amp;sd=' . $sd;
+			$args = $request->escape(explode('amp;', $this->u_action), true);
+			$find = array('"', "'", '<', '>', '&quot;', '&lt;', '&gt;');
+			$replace = array('%22', '%27', '%3C', '%3E', '%22', '%3C', '%3E');
+	
+			foreach ($args as $key => $argument)
+			{
+				if (strpos($argument, 'sid=') === 0)
+				{
+					continue;
+				}
+	
+				$use_args[] = str_replace($find, $replace, $argument);
+			}
+			unset($args);
+
+			$base_url = trim(implode('&', $use_args)) . '&amp;sk=' . $sk . '&amp;sd=' . $sd . $keywords_param;
 			$start = $this->pagination->validate_start($start, 1, $total_pm);
 			$this->pagination->generate_template_pagination($base_url, 'pagination', 'start', $total_pm, $config['topics_per_page'], $start);
 
@@ -182,6 +204,7 @@ class pmspy_module
 				'MESSAGE_COUNT'		=> $total_pm,
 				'U_NAME'			=> $sk,
 				'U_SORT'			=> $sd,
+				'S_KEYWORDS'		=> $keywords,
 				'U_ACTION'			=> $this->u_action,
 			));
 		}
@@ -213,5 +236,71 @@ class pmspy_module
 		$last_visit = $this->user->format_date(max($row['user_lastvisit'], $row['session_time']));
 		$user_info = str_replace('<a href', '<a' . ((max($row['user_lastvisit'], $row['session_time'])) ? ' title="' . $this->user->lang['LAST_ONLINE'] . ' ' . $last_visit . '"' : '')  . ' href', $user_info);
 		return $user_info;
+	}
+
+	/**
+	* Generates a sql condition for the specified keywords
+	*
+	* @param	string	$keywords			The keywords the user specified to search for
+	* @param	string	$table_alias		The alias of the logs' table ('l.' by default)
+	* @param	string	$statement_operator	The operator used to prefix the statement ('AND' by default)
+	*
+	* @return	string		Returns the SQL condition searching for the keywords
+	*/
+	protected function generate_sql_keyword($keywords, $table_alias = 'p.', $statement_operator = 'AND')
+	{
+		// Use no preg_quote for $keywords because this would lead to sole
+		// backslashes being added. We also use an OR connection here for
+		// spaces and the | string. Currently, regex is not supported for
+		// searching (but may come later).
+		$keywords = preg_split('#[\s|]+#u', utf8_strtolower($keywords), 0, PREG_SPLIT_NO_EMPTY);
+		$sql_keywords = '';
+
+		if (!empty($keywords))
+		{
+			$keywords_pattern = array();
+
+			// Build pattern and keywords...
+			for ($i = 0, $num_keywords = count($keywords); $i < $num_keywords; $i++)
+			{
+				$keywords_pattern[] = preg_quote($keywords[$i], '#');
+				$keywords[$i] = $this->db->sql_like_expression($this->db->get_any_char() . $keywords[$i] . $this->db->get_any_char());
+			}
+
+			$keywords_pattern = '#' . implode('|', $keywords_pattern) . '#ui';
+
+			$operations = array();
+			foreach ($this->user->lang as $key => $value)
+			{
+				if (substr($key, 0, 4) == 'LOG_')
+				{
+					if (is_array($value))
+					{
+						foreach ($value as $plural_value)
+						{
+							if (preg_match($keywords_pattern, $plural_value))
+							{
+								$operations[] = $key;
+								break;
+							}
+						}
+					}
+					else if (preg_match($keywords_pattern, $value))
+					{
+						$operations[] = $key;
+					}
+				}
+			}
+
+			$sql_keywords = ' ' . $statement_operator . ' (';
+			if (!empty($operations))
+			{
+				$sql_keywords .= $this->db->sql_in_set($table_alias . 'message_text', $operations) . ' OR ';
+			}
+			$sql_lower = $this->db->sql_lower_text($table_alias . 'message_text');
+			$sql_keywords .= " $sql_lower " . implode(" OR $sql_lower ", $keywords) . ')';
+		}
+
+		return $sql_keywords;
 	}
 }
