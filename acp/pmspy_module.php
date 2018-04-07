@@ -132,7 +132,7 @@ class pmspy_module
 				break;
 			}
 
-			// Get PM count for pagination
+$this->config['topics_per_page'] = 3;			// Get PM count for pagination
 			$sql = 'SELECT COUNT(t.msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE. ' t, ' . PRIVMSGS_TABLE . ' p WHERE p.msg_id = t.msg_id ' . $sql_keywords;
 			$result = $this->db->sql_query($sql);
 			$total_pm = (int) $this->db->sql_fetchfield('total_pm');
@@ -181,22 +181,7 @@ class pmspy_module
 			}
 			$this->db->sql_freeresult($result);
 
-			$args = $request->escape(explode('amp;', $this->u_action), true);
-			$find = array('"', "'", '<', '>', '&quot;', '&lt;', '&gt;');
-			$replace = array('%22', '%27', '%3C', '%3E', '%22', '%3C', '%3E');
-
-			foreach ($args as $key => $argument)
-			{
-				if (strpos($argument, 'sid=') === 0)
-				{
-					continue;
-				}
-
-				$use_args[] = str_replace($find, $replace, $argument);
-			}
-			unset($args);
-
-			$base_url = trim(implode('&', $use_args)) . '&amp;sk=' . $sk . '&amp;sd=' . $sd . $keywords_param;
+			$base_url = $this->u_action . '&sk=' . $sk . '&sd=' . $sd . $keywords_param;
 			$start = $this->pagination->validate_start($start, 1, $total_pm);
 			$this->pagination->generate_template_pagination($base_url, 'pagination', 'start', $total_pm, $config['topics_per_page'], $start);
 
