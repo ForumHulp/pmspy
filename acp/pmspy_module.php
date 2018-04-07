@@ -132,7 +132,7 @@ class pmspy_module
 				break;
 			}
 
-$this->config['topics_per_page'] = 3;			// Get PM count for pagination
+			// Get PM count for pagination
 			$sql = 'SELECT COUNT(t.msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE. ' t, ' . PRIVMSGS_TABLE . ' p WHERE p.msg_id = t.msg_id ' . $sql_keywords;
 			$result = $this->db->sql_query($sql);
 			$total_pm = (int) $this->db->sql_fetchfield('total_pm');
