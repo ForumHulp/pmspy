@@ -52,6 +52,31 @@ class pmspy_module
 			$this->user->add_lang_ext('forumhulp/pmspy', 'info_acp_pmspy');
 			$phpbb_container->get('forumhulp.helper')->detail('forumhulp/pmspy');
 			$this->tpl_name = 'acp_ext_details';
+		} else if ($this->request->variable('action', '') == 'keyword')
+		{
+			$return_ary = array();
+			$sql = 'SELECT x.* FROM
+					(
+						SELECT p.user_id AS result, u.username
+						FROM ' . PRIVMSGS_TO_TABLE . ' p
+						LEFT JOIN ' . USERS_TABLE . ' u ON u.user_id = p.user_id
+						UNION DISTINCT
+						SELECT t.author_id, u.username 
+						FROM ' . PRIVMSGS_TO_TABLE . ' t
+						LEFT JOIN ' . USERS_TABLE . ' u ON u.user_id = t.author_id
+					) x				
+					WHERE LCASE(x.username) LIKE \'' . strtolower($this->request->variable('term', '')) . '%\' 
+					ORDER BY x.username LIMIT 10';
+			$result = $this->db->sql_query($sql);
+			while ($row = $this->db->sql_fetchrow($result))
+			{
+				$return_ary[] = array(
+					'value'		=> $row['result'],
+					'label'		=> $row['username'],
+				);
+			}
+			echo json_encode($return_ary);
+			exit();
 		} else
 		{
 			// Start initial var setup
@@ -61,6 +86,7 @@ class pmspy_module
 			$delete			= $this->request->is_set_post('delete');
 			$filter			= $this->request->is_set_post('filter');
 			$keywords		= $this->request->variable('keywords', '', true);
+			$userid			= $this->request->variable('userid', 0);
 			$sql_keywords	= $keywords_param = '';
 
 			if ($delete)
@@ -95,6 +121,9 @@ class pmspy_module
 			{
 				$keywords_param = !empty($keywords) ? '&amp;keywords=' . urlencode(htmlspecialchars_decode($keywords)) : '';
 				$sql_keywords = $this->generate_sql_keyword($keywords);
+			} else if ($userid)
+			{
+				$sql_keywords = ' WHERE t.user_id = ' . $userid . ' OR t.author_id = ' . $userid;
 			}
 
 			$sort_dir = ($sd == 'd') ? ' DESC' : ' ASC';
@@ -112,7 +141,7 @@ class pmspy_module
 				break;
 
 				case 'f':
-					$order_by = 'u.username_clean' . $sort_dir;
+					$order_by = 'uu.username_clean' . $sort_dir;
 					$order_sql = ' AND t.author_id = u.user_id ';
 				break;
 
@@ -127,13 +156,14 @@ class pmspy_module
 				break;
 
 				case 't':
-					$order_by = 'to_username' . $sort_dir;
+					$order_by = 'u.username_clean' . $sort_dir;
 					$order_sql = ' AND t.user_id = u.user_id ';
 				break;
 			}
 
 			// Get PM count for pagination
-			$sql = 'SELECT COUNT(t.msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE. ' t, ' . PRIVMSGS_TABLE . ' p WHERE p.msg_id = t.msg_id ' . $sql_keywords;
+			$sql = 'SELECT COUNT(t.msg_id) AS total_pm FROM ' . PRIVMSGS_TO_TABLE. ' t
+					JOIN ' . PRIVMSGS_TABLE . ' p ON p.msg_id = t.msg_id ' . $sql_keywords;
 			$result = $this->db->sql_query($sql);
 			$total_pm = (int) $this->db->sql_fetchfield('total_pm');
 			$this->db->sql_freeresult($result);
@@ -156,13 +186,15 @@ class pmspy_module
 					(($this->config['allow_post_links']) ? OPTION_FLAG_LINKS : 0);
 
 			$sql = 'SELECT p.msg_id, p.message_subject, p.message_text, p.bbcode_uid, p.bbcode_bitfield, p.message_time, p.bcc_address, p.to_address, p.author_ip, t.user_id,
-					t.author_id, t.folder_id, LOWER(u.username) AS to_username
-					FROM ' . PRIVMSGS_TABLE . ' p, ' . PRIVMSGS_TO_TABLE . ' t, ' . USERS_TABLE . ' u
-					WHERE p.msg_id = t.msg_id ' . $sql_keywords . ' ' .
-						$order_sql . '
-					ORDER BY ' . $order_by;
+					t.author_id, t.folder_id
+					FROM ' . PRIVMSGS_TO_TABLE . ' t
+					LEFT JOIN ' . PRIVMSGS_TABLE . ' p ON p.msg_id = t.msg_id 
+					LEFT JOIN ' . USERS_TABLE . ' u ON u.user_id = t.user_id
+					LEFT JOIN ' . USERS_TABLE . ' uu ON uu.user_id = t.author_id
+					' . $sql_keywords . ' ' .
+				//		$order_sql . '
+					' ORDER BY ' . $order_by;
 			$result = $this->db->sql_query_limit($sql, $this->config['topics_per_page'], $start);
-
 			while ($row = $this->db->sql_fetchrow($result))
 			{
 				$this->template->assign_block_vars('pm_row', array(
@@ -181,15 +213,17 @@ class pmspy_module
 			}
 			$this->db->sql_freeresult($result);
 
-			$base_url = $this->u_action . '&sk=' . $sk . '&sd=' . $sd . $keywords_param;
+			$base_url = $this->u_action . '&sk=' . $sk . '&sd=' . $sd . $keywords_param . (($userid) ? '&userid=' . $userid : '');
 			$start = $this->pagination->validate_start($start, 1, $total_pm);
-			$this->pagination->generate_template_pagination($base_url, 'pagination', 'start', $total_pm, $config['topics_per_page'], $start);
+			$this->pagination->generate_template_pagination($base_url, 'pagination', 'start', $total_pm, $this->config['topics_per_page'], $start);
 
 			$this->template->assign_vars(array(
 				'MESSAGE_COUNT'		=> $total_pm,
 				'U_NAME'			=> $sk,
 				'U_SORT'			=> $sd,
 				'S_KEYWORDS'		=> $keywords,
+				'UNAME'				=> (($userid) ? $this->get_username($userid) : ''),
+				'UID'				=> $userid,
 				'U_ACTION'			=> $this->u_action,
 			));
 		}
@@ -209,6 +243,14 @@ class pmspy_module
 		return implode(', ', $groupname);
 	}
 
+	private function get_username($userid)
+	{
+		$sql = 'SELECT username FROM ' . USERS_TABLE . ' WHERE user_id = ' . $userid;
+		$result = $this->db->sql_query($sql);
+		$username = $this->db->sql_fetchfield('username');
+		return $username;
+	}
+	
 	private function get_pm_user_data($pm_user)
 	{
 		$sql = 'SELECT username, user_colour, user_lastvisit, MAX(session_time) AS session_time FROM ' . USERS_TABLE . ' u
@@ -232,7 +274,7 @@ class pmspy_module
 	*
 	* @return	string		Returns the SQL condition searching for the keywords
 	*/
-	protected function generate_sql_keyword($keywords, $table_alias = 'p.', $statement_operator = 'AND')
+	protected function generate_sql_keyword($keywords, $table_alias = 'p.', $statement_operator = 'WHERE')
 	{
 		// Use no preg_quote for $keywords because this would lead to sole
 		// backslashes being added. We also use an OR connection here for
