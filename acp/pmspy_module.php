@@ -250,7 +250,7 @@ class pmspy_module
 		$username = $this->db->sql_fetchfield('username');
 		return $username;
 	}
-	
+
 	private function get_pm_user_data($pm_user)
 	{
 		$sql = 'SELECT username, user_colour, user_lastvisit, MAX(session_time) AS session_time FROM ' . USERS_TABLE . ' u
