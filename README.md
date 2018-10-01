@@ -1,4 +1,4 @@
-PM SPy
+PM Spy
 ===========
 
 PM Spy manages PMs of your members. You can read or delete PMs of all members. In compose PM a message appears to let members know you are able to read their PMs.
