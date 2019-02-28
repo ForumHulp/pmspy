@@ -25,8 +25,8 @@
         },
 		"version-check": {
 			"host": "forumhulp.com",
-			"directory": "/ext",
-			"filename": "index.php?id=74"
+			"directory": "/versioncheck",
+			"filename": "pm-spy"
 		}
 	}
 }
