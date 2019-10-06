@@ -188,7 +188,7 @@ class pmspy_module
 			$sql = 'SELECT p.msg_id, p.message_subject, p.message_text, p.bbcode_uid, p.bbcode_bitfield, p.message_time, p.bcc_address, p.to_address, p.author_ip, t.user_id,
 					t.author_id, t.folder_id
 					FROM ' . PRIVMSGS_TO_TABLE . ' t
-					LEFT JOIN ' . PRIVMSGS_TABLE . ' p ON p.msg_id = t.msg_id 
+					RIGHT JOIN ' . PRIVMSGS_TABLE . ' p ON p.msg_id = t.msg_id 
 					LEFT JOIN ' . USERS_TABLE . ' u ON u.user_id = t.user_id
 					LEFT JOIN ' . USERS_TABLE . ' uu ON uu.user_id = t.author_id
 					' . $sql_keywords . ' ' .
